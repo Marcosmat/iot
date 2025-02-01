@@ -90,7 +90,8 @@
   <p>Atualização automática em tempo real via MQTT</p>
   
   <script>
-    const brokerUrl = 'wss://broker.hivemq.com:8000/mqtt';
+    // Alterado para usar a porta 8884 (WSS seguro)
+    const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
     const options = {
       clean: true,
       connectTimeout: 4000,
@@ -98,6 +99,8 @@
     };
 
     const client = mqtt.connect(brokerUrl, options);
+
+    // Certifique-se de que esses tópicos correspondam aos do ESP32
     const topic1 = "fgdfgdgdfgsensor1";
     const topic2 = "fdgdfgdfgsensor2";
     const topic3 = "sdfsgggsensor3";
@@ -105,7 +108,11 @@
     client.on('connect', () => {
       console.log('Conectado ao broker HiveMQ via WebSockets');
       client.subscribe([topic1, topic2, topic3], (err) => {
-        if (err) console.error('Erro ao se inscrever nos tópicos:', err);
+        if (err) {
+          console.error('Erro ao se inscrever nos tópicos:', err);
+        } else {
+          console.log('Inscrito nos tópicos:', topic1, topic2, topic3);
+        }
       });
     });
 
@@ -113,6 +120,7 @@
       const value = message.toString();
       const numValue = parseFloat(value);
       
+      // Exemplo de lógica para alterar a classe com base no valor recebido
       let newClass = ''; // Classe vazia mantém o cinza claro padrão
       if (numValue <= 50) {
         if (topic === topic1) newClass = 'light-red';
