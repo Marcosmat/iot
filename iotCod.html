@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitoramento de Portas - IOT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    .status {
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px;
+    }
+    .on {
+      background-color: #4CAF50;
+    }
+    .off {
+      background-color: #f44336;
+    }
+    .sensor-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .sensor-box {
+      padding: 15px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      min-width: 120px;
+      background-color: #d3d3d3; /* Cinza claro inicial */
+    }
+    .light-red {
+      background-color: #ffcccc; /* Vermelho claro */
+      border-color: #ff6666;
+    }
+    .light-yellow {
+      background-color: #ffffcc; /* Amarelo claro */
+      border-color: #cccc00;
+    }
+    .light-green {
+      background-color: #ccffcc; /* Verde claro */
+      border-color: #66cc66;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    td, th {
+      padding: 8px 15px;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <h1>Monitoramento de Portas - IOT</h1>
+  
+  <div class="status on" id="statusBox">
+    Status Tomada: LIGADA
+  </div>
+  
+  <div class="sensor-container">
+    <div id="sensor1" class="sensor-box">
+      <h3>Sensor 1</h3>
+      <p id="value1">-</p>
+    </div>
+    <div id="sensor2" class="sensor-box">
+      <h3>Sensor 2</h3>
+      <p id="value2">-</p>
+    </div>
+    <div id="sensor3" class="sensor-box">
+      <h3>Sensor 3</h3>
+      <p id="value3">-</p>
+    </div>
+  </div>
+  
+  <table>
+    <tr>
+      <th>Horário Atual</th>
+      <td id="currentTime">--:--:--</td>
+    </tr>
+  </table>
+  
+  <p>Atualização automática em tempo real via MQTT</p>
+  
+  <script>
+    const brokerUrl = 'wss://broker.hivemq.com:8000/mqtt';
+    const options = {
+      clean: true,
+      connectTimeout: 4000,
+      clientId: 'githubPageClient_' + Math.random().toString(16).substr(2, 8)
+    };
+
+    const client = mqtt.connect(brokerUrl, options);
+    const topic1 = "fgdfgdgdfgsensor1";
+    const topic2 = "fdgdfgdfgsensor2";
+    const topic3 = "sdfsgggsensor3";
+
+    client.on('connect', () => {
+      console.log('Conectado ao broker HiveMQ via WebSockets');
+      client.subscribe([topic1, topic2, topic3], (err) => {
+        if (err) console.error('Erro ao se inscrever nos tópicos:', err);
+      });
+    });
+
+    client.on('message', (topic, message) => {
+      const value = message.toString();
+      const numValue = parseFloat(value);
+      
+      let newClass = ''; // Classe vazia mantém o cinza claro padrão
+      if (numValue <= 50) {
+        if (topic === topic1) newClass = 'light-red';
+        else if (topic === topic2) newClass = 'light-yellow';
+        else if (topic === topic3) newClass = 'light-green';
+      }
+
+      const sensorMap = {
+        [topic1]: {element: 'sensor1', valueField: 'value1'},
+        [topic2]: {element: 'sensor2', valueField: 'value2'},
+        [topic3]: {element: 'sensor3', valueField: 'value3'}
+      };
+
+      if (sensorMap[topic]) {
+        const sensor = sensorMap[topic];
+        document.getElementById(sensor.valueField).innerText = value;
+        document.getElementById(sensor.element).className = `sensor-box ${newClass}`;
+      }
+    });
+
+    client.on('error', (err) => {
+      console.error('Erro na conexão MQTT:', err);
+    });
+
+    function updateTime() {
+      document.getElementById('currentTime').innerText = new Date().toLocaleTimeString();
+    }
+    setInterval(updateTime, 1000);
+  </script>
+</body>
+</html>
