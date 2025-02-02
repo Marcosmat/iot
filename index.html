@@ -133,6 +133,11 @@
 	    if(msgContent == "ok0"){
               statusBox.className = 'status off';
               statusBox.textContent = 'IRRIGADOR: DESLIGADO';
+            
+            }else if(msgContent == "low"){
+              statusBox.className = 'status off';
+              statusBox.textContent = 'IRRIGADOR: DESLIGADO';
+            
             }else{
             	statusBox.className = 'status on';
             	statusBox.textContent = 'IRRIGADOR: LIGADO';
@@ -153,6 +158,11 @@
         if (topic === topic1) newClass = 'light-red';
         else if (topic === topic2) newClass = 'light-yellow';
         else if (topic === topic3) newClass = 'light-green';
+      
+      }else if(numValue >= 50){
+        if(topic === topic2){
+          client.publish("shjdbksjdf@@", "D");
+        }
       }
 
       const sensorMap = {
