@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Monitoramento de Portas - IOT</title>
+  <title>Monitoramento de Reservatório - IOT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
@@ -13,21 +13,23 @@
     }
     .status {
       color: white;
+      background-color: #d3d3d3; /* Cinza claro inicial */
       padding: 10px;
-      border-radius: 5px;
+      border: 2px solid #a0a0a0;
       margin: 10px;
+      font-weight: bold; /* Adicionado negrito */
     }
     .on {
-      background-color: #4CAF50;
+      background-color: #4CAF50; /* Verde */
     }
     .off {
-      background-color: #f44336;
+      background-color: #f44336; /* Vermelho */
     }
     .sensor-container {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
       gap: 20px;
-      flex-wrap: wrap;
     }
     .sensor-box {
       padding: 15px;
@@ -37,16 +39,16 @@
       background-color: #d3d3d3; /* Cinza claro inicial */
     }
     .light-red {
-      background-color: #ffcccc; /* Vermelho claro */
-      border-color: #ff6666;
+      background-color: #ff4d4d;  /* Vermelho intenso */
+      border-color: #cc0000;
     }
     .light-yellow {
-      background-color: #ffffcc; /* Amarelo claro */
-      border-color: #cccc00;
+      background-color: #ffcc00;  /* Amarelo intenso */
+      border-color: #ff9900;
     }
     .light-green {
-      background-color: #ccffcc; /* Verde claro */
-      border-color: #66cc66;
+      background-color: #66ff66;  /* Verde intenso */
+      border-color: #33cc33;
     }
     table {
       margin: 20px auto;
@@ -59,24 +61,24 @@
   </style>
 </head>
 <body>
-  <h1>Monitoramento de Portas - IOT</h1>
+  <h1>Monitoramento de Reservatório - IOT</h1>
   
-  <div class="status on" id="statusBox">
-    Status Tomada: LIGADA
+  <div class="status" id="statusBox">
+    - - -
   </div>
   
   <div class="sensor-container">
-    <div id="sensor1" class="sensor-box">
-      <h3>Sensor 1</h3>
-      <p id="value1">-</p>
+    <div id="nivel-cheio" class="sensor-box">
+      <h3>Nível Máximo</h3>
+      <p id="nivel-cheio-valor">-</p>
     </div>
-    <div id="sensor2" class="sensor-box">
-      <h3>Sensor 2</h3>
-      <p id="value2">-</p>
+    <div id="nivel-medio" class="sensor-box">
+      <h3>Nível Médio</h3>
+      <p id="nivel-medio-valor">-</p>
     </div>
-    <div id="sensor3" class="sensor-box">
-      <h3>Sensor 3</h3>
-      <p id="value3">-</p>
+    <div id="nivel-critico" class="sensor-box">
+      <h3>Nível Crítico</h3>
+      <p id="nivel-critico-valor">-</p>
     </div>
   </div>
   
@@ -90,7 +92,6 @@
   <p>Atualização automática em tempo real via MQTT</p>
   
   <script>
-    // Alterado para usar a porta 8884 (WSS seguro)
     const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
     const options = {
       clean: true,
@@ -100,28 +101,54 @@
 
     const client = mqtt.connect(brokerUrl, options);
 
-    // Certifique-se de que esses tópicos correspondam aos do ESP32
-    const topic1 = "fgdfgdgdfgsensor1";
-    const topic2 = "fdgdfgdfgsensor2";
-    const topic3 = "sdfsgggsensor3";
+    // Tópicos dos sensores e controle
+    const topic1 = "fgdfgdgdfgsensor1";   // Nível Crítico
+    const topic2 = "fdgdfgdfgsensor2";    // Nível Médio
+    const topic3 = "sdfsgggsensor3";      // Nível Máximo
+    const topicOn = "fdhbgkjdfss165@";    // Ligar tomada
+    const topicOff = "kjdfhksdf123";      // Desligar tomada
 
     client.on('connect', () => {
-      console.log('Conectado ao broker HiveMQ via WebSockets');
-      client.subscribe([topic1, topic2, topic3], (err) => {
-        if (err) {
-          console.error('Erro ao se inscrever nos tópicos:', err);
-        } else {
-          console.log('Inscrito nos tópicos:', topic1, topic2, topic3);
-        }
+      console.log('Conectado ao broker MQTT');
+      client.subscribe([topic1, topic2, topic3, topicOn, topicOff], (err) => {
+        if (err) console.error('Erro na inscrição:', err);
       });
     });
 
     client.on('message', (topic, message) => {
+      // Controle do status da tomada
+    if (topic === topicOn || topic === topicOff) {
+        const statusBox = document.getElementById('statusBox');
+        const msgContent = message.toString().trim(); // Remove espaços em branco
+
+        // Trata mensagem vazia ou espaço em branco
+        if (msgContent === " ") {
+            statusBox.className = 'status off';
+            statusBox.textContent = 'Status Irrigador: DESLIGADO';
+            return;
+        }
+
+        // Lógica normal para mensagens válidas
+        if (topic === topicOn) {
+	    if(msgContent == "ok0"){
+              statusBox.className = 'status off';
+              statusBox.textContent = 'Status Irrigador: DESLIGADO';
+            }else{
+            	statusBox.className = 'status on';
+            	statusBox.textContent = 'Status Irrigador: LIGADO';
+	    }
+        } else {
+            statusBox.className = 'status off';
+            statusBox.textContent = 'Status Irrigador: DESLIGADO';
+        }
+        return;
+    }
+
+      // Processamento dos sensores de nível
       const value = message.toString();
       const numValue = parseFloat(value);
       
-      // Exemplo de lógica para alterar a classe com base no valor recebido
-      let newClass = ''; // Classe vazia mantém o cinza claro padrão
+      let newClass = '';
       if (numValue <= 50) {
         if (topic === topic1) newClass = 'light-red';
         else if (topic === topic2) newClass = 'light-yellow';
@@ -129,24 +156,26 @@
       }
 
       const sensorMap = {
-        [topic1]: {element: 'sensor1', valueField: 'value1'},
-        [topic2]: {element: 'sensor2', valueField: 'value2'},
-        [topic3]: {element: 'sensor3', valueField: 'value3'}
+        [topic1]: { element: 'nivel-critico', valueField: 'nivel-critico-valor' },
+        [topic2]: { element: 'nivel-medio', valueField: 'nivel-medio-valor' },
+        [topic3]: { element: 'nivel-cheio', valueField: 'nivel-cheio-valor' }
       };
 
       if (sensorMap[topic]) {
         const sensor = sensorMap[topic];
-        document.getElementById(sensor.valueField).innerText = value;
+        document.getElementById(sensor.valueField).textContent = value;
         document.getElementById(sensor.element).className = `sensor-box ${newClass}`;
       }
     });
 
     client.on('error', (err) => {
-      console.error('Erro na conexão MQTT:', err);
+      console.error('Erro MQTT:', err);
     });
 
+    // Atualização do horário
     function updateTime() {
-      document.getElementById('currentTime').innerText = new Date().toLocaleTimeString();
+      document.getElementById('currentTime').textContent = 
+        new Date().toLocaleTimeString('pt-BR');
     }
     setInterval(updateTime, 1000);
   </script>
