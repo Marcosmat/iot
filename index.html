@@ -124,7 +124,7 @@
         // Trata mensagem vazia ou espaço em branco
         if (msgContent === " ") {
             statusBox.className = 'status off';
-            statusBox.textContent = 'Status Irrigador: DESLIGADO';
+            statusBox.textContent = 'IRRIGADOR: DESLIGADO';
             return;
         }
 
@@ -132,14 +132,14 @@
         if (topic === topicOn) {
 	    if(msgContent == "ok0"){
               statusBox.className = 'status off';
-              statusBox.textContent = 'Status Irrigador: DESLIGADO';
+              statusBox.textContent = 'IRRIGADOR: DESLIGADO';
             }else{
             	statusBox.className = 'status on';
-            	statusBox.textContent = 'Status Irrigador: LIGADO';
+            	statusBox.textContent = 'IRRIGADOR: LIGADO';
 	    }
         } else {
             statusBox.className = 'status off';
-            statusBox.textContent = 'Status Irrigador: DESLIGADO';
+            statusBox.textContent = 'IRRIGADOR: DESLIGADO';
         }
         return;
     }
